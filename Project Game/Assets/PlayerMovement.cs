@@ -150,6 +150,12 @@ public class PlayerMovement : MonoBehaviour
             doubleJumpsLeft--;
         }
 
+        //Leaping
+        //if(!grounded && Input.GetKeyDown(KeyCode.LeftShift))
+        //{
+        //    rb.AddForce(orientation.forward * jumpForce * 5f);
+        //}
+
         //Dashing
         if (Input.GetKeyDown(KeyCode.W) && wTapTimes <= 1)
         {
@@ -327,9 +333,12 @@ public class PlayerMovement : MonoBehaviour
             readyToJump = false;
 
             //Add jump forces
-            rb.AddForce(orientation.forward * jumpForce * 1f);
+            
+            
             rb.AddForce(Vector2.up * jumpForce * 1.5f);
+            rb.AddForce(orientation.forward * jumpForce * 1f);
             rb.AddForce(normalVector * jumpForce * 0.5f);
+            
 
             //Reset Velocity
             rb.velocity = Vector3.zero;

@@ -3,18 +3,21 @@ using UnityEngine;
 public class GrapplingGun : MonoBehaviour
 {
     private LineRenderer lr;
-    private Vector4 grapplePoint;
+    private Vector3 grapplePoint;
     public LayerMask whatisGrappleable;
     public Transform gunTip, camera, player;
+    public Rigidbody rb;
     public float maxDistance = 100f;
     private SpringJoint joint;
 
     public bool isGrappling = false;
-    public bool isReeling = false;
 
-    //Grapple point properties
-    public RaycastHit hit;
-    public float distanceFromPoint;
+    float distanceFromPoint;
+
+    //For reeling
+    public bool isReeling = false;
+    public float grappleSpeed = 5f;
+    
 
     private void Awake()
     {
@@ -27,7 +30,7 @@ public class GrapplingGun : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.E) && !isGrappling)
         {
-            isGrappling = true;
+            
             StartGrapple();
         }
         else if (Input.GetKeyDown(KeyCode.E) && isGrappling)
@@ -39,6 +42,8 @@ public class GrapplingGun : MonoBehaviour
         if(isGrappling && Input.GetKeyDown(KeyCode.E))
         {
             isReeling = true;
+            Vector3 grappleDirection = (grapplePoint - transform.position);
+            rb.velocity = grappleDirection.normalized * grappleSpeed;
             StartReeling();
         }
         else if (isGrappling && Input.GetKeyUp(KeyCode.E))
@@ -55,8 +60,10 @@ public class GrapplingGun : MonoBehaviour
 
     void StartGrapple()
     {
+        RaycastHit hit;
         if (Physics.Raycast(origin: camera.position, direction: camera.forward, out hit, maxDistance, whatisGrappleable))
         {
+            isGrappling = true;
             grapplePoint = hit.point;
             joint = player.gameObject.AddComponent<SpringJoint>();
             joint.autoConfigureConnectedAnchor = false;
@@ -80,7 +87,7 @@ public class GrapplingGun : MonoBehaviour
 
     void DrawRope()
     {
-        //If not grapple
+        //Only do if grappling
         if (!joint) return;
         lr.SetPosition(index: 0, gunTip.position);
         lr.SetPosition(index: 1, grapplePoint);
@@ -94,12 +101,26 @@ public class GrapplingGun : MonoBehaviour
 
     void StartReeling()
     {
-        
+        Vector3 grappleDirection = (grapplePoint - transform.position);
+        joint.maxDistance = 0f;
+
+        if (distanceFromPoint < grappleDirection.magnitude)
+        {
+            float velocity = rb.velocity.magnitude;
+
+            Vector3 newDirection = Vector3.ProjectOnPlane(rb.velocity, grappleDirection);
+            rb.velocity = newDirection.normalized * velocity;
+        }
+        else
+        {
+            rb.AddForce(grappleDirection.normalized * grappleSpeed);
+            distanceFromPoint = grappleDirection.magnitude;
+        }
     }
 
     void StopReeling()
     {
-
+        joint.maxDistance = distanceFromPoint * 0.8f;
     }
 
     public bool IsGrappling()
