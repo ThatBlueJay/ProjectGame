@@ -34,13 +34,19 @@ public class PlayerMovement : MonoBehaviour
     public float slideCounterMovement = 0.2f;
     public float crouchGravityMultiplier;
 
-    //Jumping
+    //Jumping and Leaping
     private bool readyToJump = true;
     private float jumpCooldown = 0.25f;
     public float jumpForce = 550f;
+    public float dialationTimer = 0f;
+    public float dialationMax = 600f;
 
     public int startDoubleJumps = 1;
     int doubleJumpsLeft;
+    private bool readyToLeap = false;
+    public float leapForce = 10f;
+    public Vector2 leapMomentum;
+    public float maxLeap = 20f;
 
     //Sprinting
     private bool readyToSprint = true;
@@ -50,22 +56,6 @@ public class PlayerMovement : MonoBehaviour
     public float x, y;
     bool jumping, sprinting, crouching;
 
-    //AirDash
-    public float dashForce;
-    public float dashCooldown;
-    public float dashTime;
-    bool allowDashForceCounter;
-    bool readyToDash;
-    int wTapTimes = 0;
-    Vector3 dashStartVector;
-
-    //RocketBoost
-    public float maxRocketTime;
-    public float rocketForce;
-    bool rocketActive, readyToRocket;
-    bool alreadyInvokedRockedStop;
-    float rocketTimer;
-
     //Sliding
     private Vector3 normalVector = Vector3.up;
 
@@ -74,12 +64,6 @@ public class PlayerMovement : MonoBehaviour
     public float sonicSpeedForce;
     public float timeBetweenNextSonicBoost;
     float timePassedSonic;
-
-    //flash
-    public float flashCooldown, flashRange;
-    public int maxFlashesLeft;
-    bool alreadySubtractedFlash;
-    public int flashesLeft = 3;
 
     //Climbing
     public float climbForce, maxClimbSpeed;
@@ -151,31 +135,43 @@ public class PlayerMovement : MonoBehaviour
         }
 
         //Leaping
-        //if(!grounded && Input.GetKeyDown(KeyCode.LeftShift))
-        //{
-        //    rb.AddForce(orientation.forward * jumpForce * 5f);
-        //}
-
-        //Dashing
-        if (Input.GetKeyDown(KeyCode.W) && wTapTimes <= 1)
+        if(readyToLeap)
         {
-            wTapTimes++;
-            Invoke("ResetTapTimes", 0.3f);
+            Time.timeScale = 0.05f;
+            if(Input.GetKeyDown(KeyCode.W))
+            {
+                Time.timeScale = 1f;
+                Leap("forward");
+            }
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                Time.timeScale = 1f;
+                Leap("left");
+            }
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                Time.timeScale = 1f;
+                Leap("back");
+            }
+            if (Input.GetKeyDown(KeyCode.D))
+            {
+                Time.timeScale = 1f;
+                Leap("right");
+            }
+            if (Input.GetKeyDown(KeyCode.LeftAlt))
+            {
+                Time.timeScale = 1f;
+                Leap("up");
+            }
+            dialationTimer++;
+            if(dialationTimer > dialationMax)
+            {
+                Time.timeScale = 1f;
+                readyToLeap = false;
+                dialationTimer = 0;
+            }
+
         }
-        if (wTapTimes == 2 && readyToDash) Dash();
-
-        //SideFlash
-        if (Input.GetKeyDown(KeyCode.Mouse1) && flashesLeft > 0 && x > 0) SideFlash(true);
-        if (Input.GetKeyDown(KeyCode.Mouse1) && flashesLeft > 0 && x < 0) SideFlash(false);
-
-        //RocketFlight
-        //if (Input.GetKeyDown(KeyCode.LeftControl) && readyToRocket)
-        //{
-        //    //Dampens velocity
-        //    rb.velocity = rb.velocity / 3;
-        //}
-        //if (Input.GetKey(KeyCode.LeftControl) && readyToRocket)
-        //    StartRocketBoost();
 
         //Climbing
         if (Physics.Raycast(transform.position, orientation.forward, 1, whatIsLadder) && y > .9f)
@@ -185,11 +181,6 @@ public class PlayerMovement : MonoBehaviour
         //Wallrun
         if (isWallRight && !grounded) StartWallrun();
         if (isWallLeft && !grounded) StartWallrun();
-    }
-
-    private void ResetTapTimes()
-    {
-        wTapTimes = 0;
     }
 
     private void StartCrouch()
@@ -215,7 +206,6 @@ public class PlayerMovement : MonoBehaviour
     {
         rb.useGravity = false;
         isWallRunning = true;
-        allowDashForceCounter = false;
 
         if (rb.velocity.magnitude <= maxWallSpeed)
         {
@@ -262,7 +252,7 @@ public class PlayerMovement : MonoBehaviour
         CounterMovement(x, y, mag);
 
         //If holding jump && ready to jump, then jump
-        if (readyToJump && jumping && grounded && !rocketActive) Jump();
+        if (readyToJump && jumping && grounded) Jump();
 
         //If holding sprint && ready to sprint, then sprint
         if (readyToSprint && sprinting) Sprint();
@@ -270,8 +260,6 @@ public class PlayerMovement : MonoBehaviour
         //ResetStuff when touching ground
         if (grounded)
         {
-            readyToDash = true;
-            readyToRocket = true;
             doubleJumpsLeft = startDoubleJumps;
         }
 
@@ -311,6 +299,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void Jump()
     {
+        leapMomentum = FindVelRelativeToLook();
         if (grounded)
         {
             readyToJump = false;
@@ -331,20 +320,7 @@ public class PlayerMovement : MonoBehaviour
         if (!grounded)
         {
             readyToJump = false;
-
-            //Add jump forces
-            
-            
-            rb.AddForce(Vector2.up * jumpForce * 1.5f);
-            rb.AddForce(orientation.forward * jumpForce * 1f);
-            rb.AddForce(normalVector * jumpForce * 0.5f);
-            
-
-            //Reset Velocity
-            rb.velocity = Vector3.zero;
-
-            //Disable dashForceCounter if doublejumping while dashing
-            allowDashForceCounter = false;
+            readyToLeap = true;
 
             Invoke(nameof(ResetJump), jumpCooldown);
         }
@@ -353,6 +329,7 @@ public class PlayerMovement : MonoBehaviour
         if (isWallRunning)
         {
             readyToJump = false;
+            readyToLeap = false;
 
             //normal jump
             if (isWallLeft && !Input.GetKey(KeyCode.D) || isWallRight && !Input.GetKey(KeyCode.A))
@@ -370,7 +347,6 @@ public class PlayerMovement : MonoBehaviour
             rb.AddForce(orientation.forward * jumpForce * 1f);
 
             //Disable dashForceCounter if doublejumping while dashing
-            allowDashForceCounter = false;
 
             Invoke(nameof(ResetJump), jumpCooldown);
         }
@@ -381,35 +357,40 @@ public class PlayerMovement : MonoBehaviour
         readyToJump = true;
     }
 
-    private void Dash()
+    private void Leap(string dir)
     {
-        //saves current velocity
-        dashStartVector = orientation.forward;
-
-        allowDashForceCounter = true;
-
-        readyToDash = false;
-        wTapTimes = 0;
-
-        //Deactivate gravity
-        rb.useGravity = false;
-
-        //Add force
-        rb.velocity = Vector3.zero;
-        rb.AddForce(orientation.forward * dashForce);
-
-        Invoke("ActivateGravity", dashTime);
-    }
-    private void ActivateGravity()
-    {
-        rb.useGravity = true;
-
-        //Counter currentForce
-        if (allowDashForceCounter)
+        float leapspeed = leapForce;
+        if (leapspeed > maxLeap)
         {
-            rb.AddForce(dashStartVector * -dashForce * 0.5f);
+            leapspeed = maxLeap;
+        }
+        if(dir == "forward")
+        {
+           rb.AddForce(orientation.forward * leapspeed);
+           readyToLeap = false;
+        }
+        else if (dir == "left")
+        {
+            rb.AddForce(-orientation.right * leapspeed);
+            readyToLeap = false;
+        }
+        else if (dir == "right")
+        {
+            rb.AddForce(orientation.right * leapspeed);
+            readyToLeap = false;
+        }
+        else if (dir == "back")
+        {
+            rb.AddForce(-orientation.forward * leapspeed);
+            readyToLeap = false;
+        }
+        else if (dir == "up")
+        {
+            rb.AddForce(Vector2.up * jumpForce * 1.5f);
+            readyToLeap = false;
         }
     }
+
     private void SonicSpeed()
     {
         //If running builds up speed
@@ -433,92 +414,7 @@ public class PlayerMovement : MonoBehaviour
             timePassedSonic = 0;
         }
     }
-    private void SideFlash(bool isRight)
-    {
-        RaycastHit hit;
-        //Flash Right
-        if (Physics.Raycast(orientation.position, orientation.right, out hit, flashRange) && isRight)
-        {
-            transform.position = hit.point;
-        }
-        else if (!Physics.Raycast(orientation.position, orientation.right, out hit, flashRange) && isRight)
-            transform.position = new Vector3(transform.position.x + flashRange, transform.position.y, transform.position.z);
 
-        //Flash Left
-        if (Physics.Raycast(orientation.position, -orientation.right, out hit, flashRange) && !isRight)
-        {
-            transform.position = hit.point;
-        }
-        else if (!Physics.Raycast(orientation.position, -orientation.right, out hit, flashRange) && !isRight)
-            transform.position = new Vector3(transform.position.x - flashRange, transform.position.y, transform.position.z);
-
-        //Dampen falldown
-        Vector3 vel = rb.velocity;
-        if (rb.velocity.y < 0.5f && !alreadyStoppedAtLadder)
-        {
-            rb.velocity = new Vector3(vel.x, 0, vel.z);
-        }
-
-        flashesLeft--;
-        if (!alreadySubtractedFlash)
-        {
-            Invoke("ResetFlash", flashCooldown);
-            alreadySubtractedFlash = true;
-        }
-    }
-    private void ResetFlash()
-    {
-        alreadySubtractedFlash = false;
-        Invoke("ResetFlash", flashCooldown);
-
-        if (flashesLeft < maxFlashesLeft)
-            flashesLeft++;
-    }
-    private void StartRocketBoost()
-    {
-        if (!alreadyInvokedRockedStop)
-        {
-            Invoke("StopRocketBoost", maxRocketTime);
-            alreadyInvokedRockedStop = true;
-        }
-
-        rocketTimer += Time.deltaTime;
-
-        rocketActive = true;
-
-        //Disable dashForceCounter if doublejumping while dashing
-        allowDashForceCounter = false;
-
-        /*Boost all Forces
-        Vector3 vel = velocityToBoost;
-        Vector3 velBoosted = vel * rocketBoostMultiplier;
-        rb.velocity = velBoosted;
-        */
-
-        //Boost forwards and upwards
-        rb.AddForce(orientation.forward * rocketForce * Time.deltaTime * 1f);
-        rb.AddForce(Vector3.up * rocketForce * Time.deltaTime * 2f);
-
-    }
-    private void StopRocketBoost()
-    {
-        alreadyInvokedRockedStop = false;
-        rocketActive = false;
-        readyToRocket = false;
-
-        if (rocketTimer >= maxRocketTime - 0.2f)
-        {
-            rb.AddForce(orientation.forward * rocketForce * -.2f);
-            rb.AddForce(Vector3.up * rocketForce * -.4f);
-        }
-        else
-        {
-            rb.AddForce(orientation.forward * rocketForce * -.2f * rocketTimer);
-            rb.AddForce(Vector3.up * rocketForce * -.4f * rocketTimer);
-        }
-
-        rocketTimer = 0;
-    }
     private void Climb()
     {
         //Makes possible to climb even when falling down fast
