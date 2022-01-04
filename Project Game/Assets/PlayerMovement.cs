@@ -359,7 +359,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void Leap(string dir)
     {
-        float leapspeed = leapForce;
+        //rb.velocity = Vector2.zero;
+        float leapspeed = leapForce + (leapMomentum.x / 2);
         if (leapspeed > maxLeap)
         {
             leapspeed = maxLeap;
