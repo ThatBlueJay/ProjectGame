@@ -1743,7 +1743,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3885071606183629085, guid: b4c5094f49029e34cab1d46a61e99d13, type: 3}
       propertyPath: leapForce
-      value: 1000
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 3885071606183629085, guid: b4c5094f49029e34cab1d46a61e99d13, type: 3}
       propertyPath: flashRange
@@ -1819,7 +1819,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3885071606254939525, guid: b4c5094f49029e34cab1d46a61e99d13, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 127.1
+      value: 128.3
       objectReference: {fileID: 0}
     - target: {fileID: 3885071606254939525, guid: b4c5094f49029e34cab1d46a61e99d13, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1827,7 +1827,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3885071606254939525, guid: b4c5094f49029e34cab1d46a61e99d13, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -86.2
+      value: -106.2
       objectReference: {fileID: 0}
     - target: {fileID: 3885071606254939525, guid: b4c5094f49029e34cab1d46a61e99d13, type: 3}
       propertyPath: m_LocalRotation.w

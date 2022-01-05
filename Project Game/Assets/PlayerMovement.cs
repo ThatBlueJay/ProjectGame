@@ -359,30 +359,30 @@ public class PlayerMovement : MonoBehaviour
 
     private void Leap(string dir)
     {
-        //rb.velocity = Vector2.zero;
-        float leapspeed = leapForce + (leapMomentum.x / 2);
+        float leapspeed = leapForce * (leapMomentum.magnitude / 15);
         if (leapspeed > maxLeap)
         {
             leapspeed = maxLeap;
         }
         if(dir == "forward")
         {
-           rb.AddForce(orientation.forward * leapspeed);
+           //rb.AddForce(orientation.forward * leapspeed);
+           rb.velocity = orientation.forward * leapspeed;
            readyToLeap = false;
         }
         else if (dir == "left")
         {
-            rb.AddForce(-orientation.right * leapspeed);
+            rb.velocity = (-orientation.right * leapspeed);
             readyToLeap = false;
         }
         else if (dir == "right")
         {
-            rb.AddForce(orientation.right * leapspeed);
+            rb.velocity = (orientation.right * leapspeed);
             readyToLeap = false;
         }
         else if (dir == "back")
         {
-            rb.AddForce(-orientation.forward * leapspeed);
+            rb.velocity = (-orientation.forward * leapspeed);
             readyToLeap = false;
         }
         else if (dir == "up")
