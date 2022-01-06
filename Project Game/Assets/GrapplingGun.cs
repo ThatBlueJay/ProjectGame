@@ -7,6 +7,7 @@ public class GrapplingGun : MonoBehaviour
     public LayerMask whatisGrappleable;
     public Transform gunTip, camera, player;
     public Rigidbody rb;
+
     public float maxDistance = 100f;
     private SpringJoint joint;
 
@@ -95,6 +96,7 @@ public class GrapplingGun : MonoBehaviour
 
     void StopGrapple()
     {
+        rb.GetComponent<PlayerMovement>().resetJump();
         lr.positionCount = 0;
         Destroy(joint);
     }

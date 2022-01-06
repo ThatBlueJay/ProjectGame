@@ -77,9 +77,13 @@ public class PlayerMovement : MonoBehaviour
     bool isWallRunning;
     public float maxWallRunCameraTilt, wallRunCameraTilt;
 
+    //Respawning
+    public Vector3 initialSpawn;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        initialSpawn = transform.position;
         startMaxSpeed = maxSpeed;
     }
 
@@ -102,6 +106,7 @@ public class PlayerMovement : MonoBehaviour
         Look();
         CheckForWall();
         SonicSpeed();
+        CheckforDeath();
     }
 
     /// <summary>
@@ -392,6 +397,11 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    public void resetJump()
+    {
+        doubleJumpsLeft = startDoubleJumps;
+    }
+
     private void SonicSpeed()
     {
         //If running builds up speed
@@ -574,5 +584,14 @@ public class PlayerMovement : MonoBehaviour
     private void StopGrounded()
     {
         grounded = false;
+    }
+
+    private void CheckforDeath()
+    {
+        if(transform.position.y <= 0)
+        {
+            rb.velocity = Vector2.zero;
+            transform.position = initialSpawn;
+        }
     }
 }
